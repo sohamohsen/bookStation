@@ -11,5 +11,6 @@ springdoc:
     produces: application/json
 
 server:
+  port: 8030
   servlet:
     context-path: /api/v1

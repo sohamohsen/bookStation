@@ -1,30 +1,31 @@
-package com.projects.bookstation.user;
+package com.projects.bookstation.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.security.auth.Subject;
 import java.security.Principal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-@Data
+@Getter @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "user")
+@Table(name = "users") // avoid reserved word "user"
 @EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails, Principal {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -33,64 +34,75 @@ public class User implements UserDetails, Principal {
 
     private String lastName;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
+    @ToString.Exclude
     private String password;
 
     private LocalDate dateOfBirth;
 
-    @Column(name = "role_id", nullable = false)
-    private int roleId;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id", nullable = false),
+            inverseJoinColumns = @JoinColumn(name = "role_id", nullable = false)
+    )
+    private Set<Role> roles;
 
-    private boolean enabled;
+    private boolean enabled = true;
 
-    private boolean accountLocked;
+    private boolean accountLocked = false;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private LocalDate createdAt;
+    private Instant createdAt;
 
     @LastModifiedDate
-    @Column(insertable = false)
-    private LocalDate updatedAt;
+    @Column(nullable = false)
+    private Instant updatedAt;
 
+    // ----- Principal -----
     @Override
     public String getName() {
         return email;
     }
 
+    // ----- UserDetails -----
     @Override
-    public boolean implies(Subject subject) {
-        return Principal.super.implies(subject);
-    }
-
-    @Override
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return roles.stream()
+                .map(role -> {
+                    String r = role.getRole();
+                    String auth = r.startsWith("ROLE_") ? r : "ROLE_" + r;
+                    return new SimpleGrantedAuthority(auth);
+                })
+                .collect(Collectors.toSet());
     }
 
-    @Override
+    @Override @JsonIgnore
     public String getPassword() {
         return password;
     }
 
-    @Override
+    @Override @JsonIgnore
     public String getUsername() {
         return email;
     }
 
-    @Override
+    @Override @JsonIgnore
     public boolean isAccountNonExpired() {
         return true;
     }
 
-    @Override
+    @Override @JsonIgnore
     public boolean isAccountNonLocked() {
         return !accountLocked;
     }
 
-    @Override
+    @Override @JsonIgnore
     public boolean isCredentialsNonExpired() {
         return true;
     }
@@ -100,6 +112,7 @@ public class User implements UserDetails, Principal {
         return enabled;
     }
 
+    // convenience
     public String getFullName() {
         return firstName + " " + lastName;
     }
