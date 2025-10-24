@@ -14,7 +14,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter @Setter
@@ -49,7 +49,7 @@ public class User implements UserDetails, Principal {
             joinColumns = @JoinColumn(name = "user_id", nullable = false),
             inverseJoinColumns = @JoinColumn(name = "role_id", nullable = false)
     )
-    private Set<Role> roles;
+    private List<Role> roles;
 
     private boolean enabled = true;
 

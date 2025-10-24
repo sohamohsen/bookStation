@@ -8,7 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
-import java.util.Set;
+import java.util.List;
 
 @Getter @Setter
 @Builder
@@ -37,7 +37,7 @@ public class Role {
 
     @ManyToMany(mappedBy = "roles")
     @JsonIgnore
-    private Set<User> user;
+    private List<User> user;
 
     // MANUALLY ADD THE GETTER
     public String getRole() {
