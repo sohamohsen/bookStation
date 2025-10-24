@@ -6,7 +6,7 @@ import com.projects.bookstation.dto.EmailTemplateName;
 import com.projects.bookstation.dto.RegistrationRequest;
 import com.projects.bookstation.entity.Token;
 import com.projects.bookstation.entity.User;
-import com.projects.bookstation.excption.ActivationCodeExpiredException;
+import com.projects.bookstation.handler.excption.ActivationCodeExpiredException;
 import com.projects.bookstation.repository.RoleRepository;
 import com.projects.bookstation.repository.TokenRepository;
 import com.projects.bookstation.repository.UserRepository;
