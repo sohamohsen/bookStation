@@ -122,7 +122,7 @@ public class AuthenticationService {
                 storedToken.getUser().getId(),
                 storedToken.getExpiresAt());
 
-        var user = userRepository.findById(storedToken.getUser().getId())
+        var user = userRepository.findById(Long.valueOf(storedToken.getUser().getId()))
                 .orElseThrow(() -> {
                     log.error("User not found for token: {}", token);
                     return new ActivationCodeExpiredException("User not found");
