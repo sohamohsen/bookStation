@@ -1,8 +1,8 @@
 package com.projects.bookstation.controller;
 
-import com.projects.bookstation.dto.AuthenticationRequest;
-import com.projects.bookstation.dto.AuthenticationResponse;
-import com.projects.bookstation.dto.RegistrationRequest;
+import com.projects.bookstation.dto.request.AuthenticationRequest;
+import com.projects.bookstation.dto.response.AuthenticationResponse;
+import com.projects.bookstation.dto.request.RegistrationRequest;
 import com.projects.bookstation.service.AuthenticationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;

@@ -1,4 +1,4 @@
-package com.projects.bookstation.dto;
+package com.projects.bookstation.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

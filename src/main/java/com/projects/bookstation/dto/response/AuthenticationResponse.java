@@ -1,4 +1,4 @@
-package com.projects.bookstation.dto;
+package com.projects.bookstation.dto.response;
 
 import lombok.Builder;
 import lombok.Data;

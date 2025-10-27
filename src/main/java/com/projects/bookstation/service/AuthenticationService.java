@@ -1,9 +1,9 @@
 package com.projects.bookstation.service;
 
-import com.projects.bookstation.dto.AuthenticationRequest;
-import com.projects.bookstation.dto.AuthenticationResponse;
+import com.projects.bookstation.dto.request.AuthenticationRequest;
+import com.projects.bookstation.dto.response.AuthenticationResponse;
 import com.projects.bookstation.dto.EmailTemplateName;
-import com.projects.bookstation.dto.RegistrationRequest;
+import com.projects.bookstation.dto.request.RegistrationRequest;
 import com.projects.bookstation.entity.Token;
 import com.projects.bookstation.entity.User;
 import com.projects.bookstation.handler.excption.ActivationCodeExpiredException;
