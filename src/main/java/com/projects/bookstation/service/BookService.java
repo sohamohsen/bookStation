@@ -159,7 +159,6 @@ public class BookService {
         BookTransactionHistory history = BookTransactionHistory.builder()
                 .book(book)
                 .user(user)
-                .userId(user.getId())
                 .returned(false)
                 .returnApproved(false)
                 .build();

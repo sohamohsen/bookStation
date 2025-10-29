@@ -1,6 +1,5 @@
 package com.projects.bookstation.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -21,9 +20,6 @@ public class BookTransactionHistory extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "book_id")
     private Book book;
-
-    @Column(name = "user_id")
-    private Integer userId;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -18,7 +18,7 @@ import static java.io.File.separator;
 @Slf4j
 public class FileStorageService {
 
-    @Value("${application.file.upload.photos-output-path}")
+    @Value("${app.file.upload.photos-output-path}")
     private String fileUploadPath;
 
     public String saveFile(

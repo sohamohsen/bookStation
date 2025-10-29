@@ -5,6 +5,7 @@ import com.projects.bookstation.dto.response.BookResponse;
 import com.projects.bookstation.dto.response.BorrowedBookResponse;
 import com.projects.bookstation.entity.Book;
 import com.projects.bookstation.entity.BookTransactionHistory;
+import com.projects.bookstation.utils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -24,19 +25,19 @@ public class BookMapper {
     }
 
     public BookResponse toBookResponse(Book book) {
-        BookResponse bookResponse = new BookResponse();
-        bookResponse.setId(book.getId());
-        bookResponse.setTitle(book.getTitle());
-        bookResponse.setAuthor(book.getAuthor());
-        bookResponse.setIsbn(book.getIsbn());
-        bookResponse.setSynopsis(book.getSynopsis());
-        bookResponse.setOwner(book.getOwner().getUsername());
-        bookResponse.setRate(book.getRate());
-        bookResponse.setArchived(book.isArchived());
-        bookResponse.setShareable(book.isShareable());
-        return bookResponse;
+        return BookResponse.builder()
+                .id(book.getId())
+                .title(book.getTitle())
+                .author(book.getAuthor())
+                .isbn(book.getIsbn())
+                .synopsis(book.getSynopsis())
+                .rate(book.getRate())
+                .archived(book.isArchived())
+                .shareable(book.isShareable())
+//                .owner(book.getOwner().fullName())
+                .cover(FileUtils.readFileFromLocation(book.getBookCover()))
+                .build();
     }
-
     public BorrowedBookResponse toBorrowedBookResponse(BookTransactionHistory history) {
         BorrowedBookResponse response = new BorrowedBookResponse();
         Book book = history.getBook();
