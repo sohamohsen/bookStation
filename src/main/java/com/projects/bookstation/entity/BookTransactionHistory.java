@@ -23,7 +23,7 @@ public class BookTransactionHistory extends BaseEntity {
     private Book book;
 
     @Column(name = "user_id")
-    private String userId;
+    private Integer userId;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

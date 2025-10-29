@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/books")
@@ -68,4 +69,53 @@ public class BookController {
         return ResponseEntity.ok(bookService.getAllReturnedBooks(page, size, authentication));
     }
 
+    @PatchMapping("/update-sharable-book/{id}")
+    public ResponseEntity<?> updateBookShareableStatus(
+            @PathVariable Integer id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(bookService.updateBookShareableStatus(id, authentication));
+    }
+
+    @PatchMapping("/update-archive-book/{id}")
+    public ResponseEntity<?> updateBookArchiveStatus(
+            @PathVariable Integer id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(bookService.updateBookArchiveStatus(id, authentication));
+    }
+
+    @PostMapping("/request-borrow-book/{id}")
+    public ResponseEntity<?> requestBorrowBook(
+            @PathVariable Integer id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(bookService.requestBorrowBook(id, authentication));
+    }
+
+    @PatchMapping("/return-book/{id}")
+    public ResponseEntity<?> returnBorrowedBook(
+            @PathVariable Integer id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(bookService.returnBorrowedBook(id, authentication));
+    }
+
+    @PatchMapping("/approve-return-book/{id}")
+    public ResponseEntity<?> approveReturnBorrowedBook(
+            @PathVariable Integer id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(bookService.approveReturnBorrowedBook(id, authentication));
+    }
+
+    @PostMapping(value = "/upload-cover-image/{bookId}", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> uploadBookCoverImage(
+            @PathVariable Integer bookId,
+            @RequestPart("image") MultipartFile file,
+            Authentication authentication
+    ) {
+        bookService.uploadBookCoverImage(bookId, file, authentication);
+        return ResponseEntity.accepted().build();
+    }
 }

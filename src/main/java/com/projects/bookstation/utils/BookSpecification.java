@@ -1,4 +1,4 @@
-package com.projects.bookstation.specification;
+package com.projects.bookstation.utils;
 
 import com.projects.bookstation.entity.Book;
 import org.springframework.data.jpa.domain.Specification;

@@ -6,8 +6,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
 
-public interface BookTransactionHistoryRepository extends JpaRepository<BookTransactionHistoryRepository, Integer> {
+
+public interface BookTransactionHistoryRepository extends JpaRepository<BookTransactionHistory, Integer> {
 
     @Query("""
             SELECT history FROM BookTransactionHistory history
@@ -20,4 +22,18 @@ public interface BookTransactionHistoryRepository extends JpaRepository<BookTran
             WHERE  history.book.owner.id = :userId
             """)
     Page<BookTransactionHistory> findAllReturnedBooks(Pageable pageable, Integer userId);
+
+    @Query("""
+          SELECT CASE WHEN COUNT(h) > 0 THEN true ELSE false END
+          FROM BookTransactionHistory h
+          WHERE h.book.id = :bookId
+            AND h.user.id = :userId
+            AND h.returnApproved
+            AND h.returnApproved = false
+         """)
+    boolean isAlreadyBorrowed(Integer bookId, Integer userId);
+
+    Optional<BookTransactionHistory> findByBookIdAndUserIdAndReturnedFalseAndReturnApprovedFalse(Integer bookId, Integer userId);
+
+    Optional<BookTransactionHistory> findByBookIdAndUserIdAndReturnedTrueAndReturnApprovedFalse(Integer bookId, Integer id);
 }

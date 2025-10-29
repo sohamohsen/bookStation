@@ -1,5 +1,6 @@
 package com.projects.bookstation.handler;
 
+import com.projects.bookstation.handler.excption.OperationNotPermittedException;
 import jakarta.mail.MessagingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.projects.bookstation.handler.businessErrorCode.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @RestControllerAdvice
@@ -87,6 +89,17 @@ public class GlobalExceptionHandler {
                 ExceptionResponse
                         .builder()
                         .businessExceptionDescription("Internal Server Error")
+                        .error(ex.getMessage())
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(OperationNotPermittedException.class)
+    public ResponseEntity<ExceptionResponse> handleOperationNotPermittedException(Exception ex) {
+        ex.printStackTrace();
+        return ResponseEntity.status(BAD_REQUEST).body(
+                ExceptionResponse
+                        .builder()
                         .error(ex.getMessage())
                         .build()
         );

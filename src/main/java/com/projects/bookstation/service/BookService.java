@@ -7,6 +7,7 @@ import com.projects.bookstation.dto.response.PageResponse;
 import com.projects.bookstation.entity.Book;
 import com.projects.bookstation.entity.BookTransactionHistory;
 import com.projects.bookstation.entity.User;
+import com.projects.bookstation.handler.excption.OperationNotPermittedException;
 import com.projects.bookstation.mapper.BookMapper;
 import com.projects.bookstation.repository.BookRepository;
 import com.projects.bookstation.repository.BookTransactionHistoryRepository;
@@ -17,13 +18,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.config.SortHandlerMethodArgumentResolverCustomizer;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-import static com.projects.bookstation.specification.BookSpecification.withOwnerId;
+import static com.projects.bookstation.utils.BookSpecification.withOwnerId;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +32,7 @@ public class BookService {
     private final BookRepository bookRepository;
     private final BookTransactionHistoryRepository bookTransactionHistoryRepository;
     private final BookMapper bookMapper;
-    private final SortHandlerMethodArgumentResolverCustomizer sortCustomizer;
-
+    private final FileStorageService fileStorageService;
 
     public Integer saveBook(@Valid BookRequest bookRequest, Authentication authentication) {
 
@@ -118,5 +118,93 @@ public class BookService {
                 historyPage.isFirst(),
                 historyPage.isLast()
         );
+    }
+
+    public Integer updateBookShareableStatus(Integer id, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Book not found"));
+        if (!book.getOwner().getId().equals(user.getId())) {
+            throw new OperationNotPermittedException("You are not authorized to update this book");
+        }
+        book.setShareable(book.isShareable());
+        return bookRepository.save(book).getId();
+    }
+
+    public Integer updateBookArchiveStatus(Integer id, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Book not found"));
+        if (!book.getOwner().getId().equals(user.getId())) {
+            throw new OperationNotPermittedException("You are not authorized to update this book");
+        }
+        book.setArchived(book.isArchived());
+        return bookRepository.save(book).getId();
+    }
+
+    public Integer requestBorrowBook(Integer bookId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new EntityNotFoundException(("Book not found")));
+        if(!book.isShareable() || book.isArchived()) {
+            throw new OperationNotPermittedException("This book is not shareable");
+        }
+        if (book.getOwner().getId().equals(user.getId())) {
+            throw new OperationNotPermittedException("You are not authorized to borrow this book");
+        }
+        if(bookTransactionHistoryRepository.isAlreadyBorrowed(bookId, user.getId())){
+            throw new OperationNotPermittedException("You are borrowing this book");
+        }
+
+        BookTransactionHistory history = BookTransactionHistory.builder()
+                .book(book)
+                .user(user)
+                .userId(user.getId())
+                .returned(false)
+                .returnApproved(false)
+                .build();
+        return bookTransactionHistoryRepository.save(history).getId();
+
+    }
+
+    public Integer returnBorrowedBook(Integer bookId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new EntityNotFoundException(("Book not found")));
+        if(!book.isShareable() || book.isArchived()) {
+            throw new OperationNotPermittedException("This book is not shareable");
+        }
+        BookTransactionHistory history = bookTransactionHistoryRepository.findByBookIdAndUserIdAndReturnedFalseAndReturnApprovedFalse(bookId, user.getId())
+                .orElseThrow(() -> new EntityNotFoundException("You didn't borrow this book"));
+        if (!history.getUser().getId().equals(user.getId())) {
+            throw new OperationNotPermittedException("You are not authorized to return this book");
+        }
+        history.setReturned(true);
+        return bookTransactionHistoryRepository.save(history).getId();
+    }
+
+    public Integer approveReturnBorrowedBook(Integer bookId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new EntityNotFoundException(("Book not found")));
+        if(!book.isShareable() || book.isArchived()) {
+            throw new OperationNotPermittedException("This book is not shareable");
+        }
+        BookTransactionHistory history = bookTransactionHistoryRepository.findByBookIdAndUserIdAndReturnedTrueAndReturnApprovedFalse(bookId, user.getId())
+                .orElseThrow(() -> new EntityNotFoundException("The book is not returned yet. you cannot approve its return"));
+//        if (!history.getUser().getId().equals(user.getId())) {
+//            throw new OperationNotPermittedException("You are not authorized to  return this book");
+//        }
+        history.setReturnApproved(true);
+        return bookTransactionHistoryRepository.save(history).getId();
+    }
+
+    public void uploadBookCoverImage(Integer bookId, MultipartFile file, Authentication authentication) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new EntityNotFoundException("Book not found"));
+        User user = (User) authentication.getPrincipal();
+        var bookCover = fileStorageService.saveFile(file,user.getId());
+        book.setBookCover(bookCover);
+        bookRepository.save(book);
     }
 }
