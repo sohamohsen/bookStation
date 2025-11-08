@@ -8,8 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:book-network-ui": "node dist/book-network-ui/server/server.mjs",
-    "api-gen": "ng-openapi-gen --input src/openapi/openapi.json --output src/app/services"
-
+    "api-gen": "ng-openapi-gen --input http://localhost:8030/api/v1/v3/api-docs --output ./src/app/services"
   },
   "prettier": {
     "printWidth": 100,
@@ -35,6 +34,7 @@
     "@angular/ssr": "^20.3.8",
     "express": "^5.1.0",
     "rxjs": "~7.8.0",
+    "ng-openapi-gen": "^0.52.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
