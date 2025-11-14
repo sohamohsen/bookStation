@@ -117,7 +117,7 @@ public class AuthenticationService {
                     return new IllegalStateException("Invalid activation code");
                 });
 
-        log.debug("Token found: id={}, userId={}, expiresAt={}",
+        log.debug("TokenService found: id={}, userId={}, expiresAt={}",
                 storedToken.getId(),
                 storedToken.getUser().getId(),
                 storedToken.getExpiresAt());
