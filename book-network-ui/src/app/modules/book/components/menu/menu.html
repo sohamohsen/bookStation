@@ -1,0 +1,72 @@
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+    <a class="navbar-brand" routerLink="/">BNS</a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 d-flex flex-row gap-4">
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            routerLink="/books"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <i class="fas fa-home-alt"></i>
+            <span>Home</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/books/my-books" routerLinkActive="active">
+            <i class="fas fa-book"></i>
+            <span>My books</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/my-waiting-list" routerLinkActive="active">
+            <i class="fas fa-heart"></i>
+            <span>My waiting list</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/my-returned-books" routerLinkActive="active">
+            <i class="fas fa-home-alt"></i>
+            <span>My returned books</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/my-borrowed-books" routerLinkActive="active">
+            <i class="fas fa-home-alt"></i>
+            <span>Borrowed books</span>
+          </a>
+        </li>
+      </ul>
+
+      <form class="d-flex gap-2 align-items-center" role="search">
+        <input class="form-control" type="text" placeholder="Find a book" aria-label="search" />
+        <button class="btn btn-outline-success" type="submit">
+          <i class="fas fa-search"></i>
+        </button>
+        <span class="text-capitalize fw-bold">Soha</span>
+        <button class="btn btn-link" type="button" (click)="logout()">
+          <i class="fas fa-door-open"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,18 @@
+/* src/app/modules/book/components/menu/menu.scss */
+
+.navbar-nav .nav-link {
+  display: flex;           /* icon + text on one line */
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.navbar-nav .nav-link:hover {
+  background-color: #d6e5f1;
+  border-radius: 5px;
+  text-decoration: underline;
+}
+
+.navbar-nav .nav-link.active {
+  color: #24a7e9;
+  border-radius: 5px;
+}
