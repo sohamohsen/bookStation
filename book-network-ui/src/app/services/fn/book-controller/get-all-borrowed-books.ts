@@ -8,14 +8,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { PageResponseObject } from '../../models/page-response-object';
+import { PageResponseBorrowedBookResponse } from '../../models/page-response-borrowed-book-response';
 
 export interface GetAllBorrowedBooks$Params {
   page?: number;
   size?: number;
 }
 
-export function getAllBorrowedBooks(http: HttpClient, rootUrl: string, params?: GetAllBorrowedBooks$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseObject>> {
+export function getAllBorrowedBooks(http: HttpClient, rootUrl: string, params?: GetAllBorrowedBooks$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseBorrowedBookResponse>> {
   const rb = new RequestBuilder(rootUrl, getAllBorrowedBooks.PATH, 'get');
   if (params) {
     rb.query('page', params.page, {});
@@ -27,7 +27,7 @@ export function getAllBorrowedBooks(http: HttpClient, rootUrl: string, params?: 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<PageResponseObject>;
+      return r as StrictHttpResponse<PageResponseBorrowedBookResponse>;
     })
   );
 }

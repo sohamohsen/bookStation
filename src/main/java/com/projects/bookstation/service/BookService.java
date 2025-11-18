@@ -22,6 +22,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 import static com.projects.bookstation.utils.BookSpecification.withOwnerId;
@@ -50,7 +52,7 @@ public class BookService {
 
     public PageResponse<BookResponse> getAllBooks(Integer page, Integer size, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        Pageable pageable = PageRequest.of(page, size, Sort.by("CreatedDate").descending());
+        Pageable pageable = PageRequest.of(page, size);
         Page<Book> bookPage = bookRepository.findAllDisplayableBooks(user.getId(), pageable);
         List<BookResponse> bookResponses = bookPage.stream()
                 .map(bookMapper::toBookResponse)
@@ -198,12 +200,20 @@ public class BookService {
         return bookTransactionHistoryRepository.save(history).getId();
     }
 
-    public void uploadBookCoverImage(Integer bookId, MultipartFile file, Authentication authentication) {
+    public void uploadBookCoverImage(Integer bookId, String bookCover, Authentication authentication) throws AccessDeniedException {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new EntityNotFoundException("Book not found"));
+
         User user = (User) authentication.getPrincipal();
-        var bookCover = fileStorageService.saveFile(file,user.getId());
+
+        if (!book.getOwner().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to update this book cover");
+        }
+
+        // نخزن الصورة كـ BLOB في الـ DB
         book.setBookCover(bookCover);
         bookRepository.save(book);
+
     }
+
 }

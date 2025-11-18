@@ -1,6 +1,8 @@
 package com.projects.bookstation.controller;
 
 import com.projects.bookstation.dto.request.BookRequest;
+import com.projects.bookstation.dto.response.BookResponse;
+import com.projects.bookstation.dto.response.BorrowedBookResponse;
 import com.projects.bookstation.dto.response.PageResponse;
 import com.projects.bookstation.service.BookService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,13 +13,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.AccessDeniedException;
+
 @RestController
 @RequestMapping("/books")
 @RequiredArgsConstructor
 @Tag(name = "Book Controller", description = "APIs for managing books in the Book Station application")
 public class BookController {
 
-    private BookService bookService;
+    private final BookService bookService;
 
     @PostMapping("/add")
     public ResponseEntity<?> addBook(
@@ -34,7 +38,7 @@ public class BookController {
     }
 
     @GetMapping("/get-all-books")
-    public ResponseEntity<PageResponse<?>> getAllBooks(
+    public ResponseEntity<PageResponse<BookResponse>> getAllBooks(
             @RequestParam(name = "page", defaultValue = "0", required = false) Integer page,
             @RequestParam(name = "size", defaultValue = "10", required = false) Integer size,
             Authentication authentication
@@ -43,7 +47,7 @@ public class BookController {
     }
 
     @GetMapping("/get-owner-books")
-    public ResponseEntity<PageResponse<?>> getAllOwnerBooks(
+    public ResponseEntity<PageResponse<BookResponse>> getAllOwnerBooks(
             @RequestParam(name = "page", defaultValue = "0", required = false) Integer page,
             @RequestParam(name = "size", defaultValue = "10", required = false) Integer size,
             Authentication authentication
@@ -52,7 +56,7 @@ public class BookController {
     }
 
     @GetMapping("/get-borrowed-books")
-    public ResponseEntity<PageResponse<?>> getAllBorrowedBooks(
+    public ResponseEntity<PageResponse<BorrowedBookResponse>> getAllBorrowedBooks(
             @RequestParam(name = "page", defaultValue = "0", required = false) Integer page,
             @RequestParam(name = "size", defaultValue = "10", required = false) Integer size,
             Authentication authentication
@@ -61,7 +65,7 @@ public class BookController {
     }
 
     @GetMapping("/get-returned-books")
-    public ResponseEntity<PageResponse<?>> getAllReturnedBooks(
+    public ResponseEntity<PageResponse<BorrowedBookResponse>> getAllReturnedBooks(
             @RequestParam(name = "page", defaultValue = "0", required = false) Integer page,
             @RequestParam(name = "size", defaultValue = "10", required = false) Integer size,
             Authentication authentication
@@ -109,13 +113,13 @@ public class BookController {
         return ResponseEntity.ok(bookService.approveReturnBorrowedBook(id, authentication));
     }
 
-    @PostMapping(value = "/upload-cover-image/{bookId}", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/upload-cover-image/{bookId}")
     public ResponseEntity<?> uploadBookCoverImage(
             @PathVariable Integer bookId,
-            @RequestPart("image") MultipartFile file,
+            String bookCover,
             Authentication authentication
-    ) {
-        bookService.uploadBookCoverImage(bookId, file, authentication);
+    ) throws AccessDeniedException {
+        bookService.uploadBookCoverImage(bookId, bookCover, authentication);
         return ResponseEntity.accepted().build();
     }
 }

@@ -5,9 +5,10 @@ import com.projects.bookstation.dto.response.BookResponse;
 import com.projects.bookstation.dto.response.BorrowedBookResponse;
 import com.projects.bookstation.entity.Book;
 import com.projects.bookstation.entity.BookTransactionHistory;
-import com.projects.bookstation.utils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.Base64;
 
 @Component
 @RequiredArgsConstructor
@@ -34,9 +35,15 @@ public class BookMapper {
                 .rate(book.getRate())
                 .archived(book.isArchived())
                 .shareable(book.isShareable())
-//                .owner(book.getOwner().fullName())
-                .cover(FileUtils.readFileFromLocation(book.getBookCover()))
+                .cover(book.getBookCover())
                 .build();
+    }
+
+    private byte[] encodeCover(byte[] cover) {
+        if (cover == null || cover.length == 0) {
+            return null;
+        }
+        return Base64.getEncoder().encodeToString(cover).getBytes();
     }
     public BorrowedBookResponse toBorrowedBookResponse(BookTransactionHistory history) {
         BorrowedBookResponse response = new BorrowedBookResponse();
