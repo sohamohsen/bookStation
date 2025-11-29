@@ -13,8 +13,7 @@ export interface GetBookById$Params {
   id: number;
 }
 
-export function getBookById(http: HttpClient, rootUrl: string, params: GetBookById$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-}>> {
+export function getBookById(http: HttpClient, rootUrl: string, params: GetBookById$Params, context?: HttpContext | undefined): Observable<StrictHttpResponse<{}>> {
   const rb = new RequestBuilder(rootUrl, getBookById.PATH, 'get');
   if (params) {
     rb.path('id', params.id, {});

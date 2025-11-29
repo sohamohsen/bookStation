@@ -16,8 +16,11 @@ export interface UploadBookCoverImage$Params {
 }
 }
 
-export function uploadBookCoverImage(http: HttpClient, rootUrl: string, params: UploadBookCoverImage$Params, context?: HttpContext): Observable<StrictHttpResponse<{
-}>> {
+export function uploadBookCoverImage(http: HttpClient, rootUrl: string, params: {
+  'book-id': number;
+  body: FormData;
+  bookId: number
+}, context?: HttpContext | undefined): Observable<StrictHttpResponse<{}>> {
   const rb = new RequestBuilder(rootUrl, uploadBookCoverImage.PATH, 'post');
   if (params) {
     rb.path('bookId', params.bookId, {});

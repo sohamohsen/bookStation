@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.Base64;
 import java.util.List;
 
 import static com.projects.bookstation.utils.BookSpecification.withOwnerId;
@@ -200,7 +201,12 @@ public class BookService {
         return bookTransactionHistoryRepository.save(history).getId();
     }
 
-    public void uploadBookCoverImage(Integer bookId, String bookCover, Authentication authentication) throws AccessDeniedException {
+    public void uploadBookCoverImage(
+            Integer bookId,
+            MultipartFile image,
+            Authentication authentication
+    ) throws AccessDeniedException, IOException {
+
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new EntityNotFoundException("Book not found"));
 
@@ -210,10 +216,11 @@ public class BookService {
             throw new AccessDeniedException("You are not allowed to update this book cover");
         }
 
-        // نخزن الصورة كـ BLOB في الـ DB
-        book.setBookCover(bookCover);
-        bookRepository.save(book);
+        // حوّل الصورة لـ Base64 وخزنها في الـ DB كسطر نصي
+        String base64 = Base64.getEncoder().encodeToString(image.getBytes());
+        book.setBookCover(base64);
 
+        bookRepository.save(book);
     }
 
 }
