@@ -1,7 +1,14 @@
-import {Component, Input, AfterViewInit, ChangeDetectorRef, Output, EventEmitter} from '@angular/core';
+import {
+  Component,
+  Input,
+  AfterViewInit,
+  ChangeDetectorRef,
+  Output,
+  EventEmitter
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BookResponse } from '../../../../services/models/book-response';
-import {Rating} from '../rating/rating';
+import { Rating } from '../rating/rating';
 
 @Component({
   selector: 'app-book-card',
@@ -13,34 +20,47 @@ import {Rating} from '../rating/rating';
 export class BookCard implements AfterViewInit {
 
   @Input() book!: BookResponse;
-  @Input() manage!:boolean;   // 👈 هُنا
+  @Input() manage: boolean = false;
+
   imageLoaded = false;
-  private _manage = false;
-  private _bookCover: string | undefined;
+
+  // صورة افتراضية
+  readonly defaultImage =
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png';
 
   constructor(private _cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit() {
-    // Give images a moment to render
     setTimeout(() => {
       this.imageLoaded = true;
       this._cdr.detectChanges();
     }, 100);
   }
 
+  // ✅ هنا بنجهز الـ src صح
   get bookCover(): string {
-    if (this.book?.cover) {
-      return this.book.cover;
+    // بعض الـ APIs ممكن ترجع bookCover أو cover
+    const cover = (this.book as any)?.bookCover ?? this.book?.cover;
+
+    if (!cover) {
+      return this.defaultImage;
     }
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png';
+
+    // لو الـ string أصلاً فيها data:... سيبيها زي ما هي
+    if (cover.startsWith('data:')) {
+      return cover;
+    }
+
+    // أغلب الصور Base64 JPEG (بتبدأ بـ /9j/), فبنضيف الـ prefix
+    return `data:image/jpeg;base64,${cover}`;
   }
 
-  @Output() private share: EventEmitter<BookResponse> = new EventEmitter<BookResponse>();
-  @Output() private archive: EventEmitter<BookResponse> = new EventEmitter<BookResponse>();
-  @Output() private addToWaitingList: EventEmitter<BookResponse> = new EventEmitter<BookResponse>();
-  @Output() private borrow: EventEmitter<BookResponse> = new EventEmitter<BookResponse>();
-  @Output() private edit: EventEmitter<BookResponse> = new EventEmitter<BookResponse>();
-  @Output() private details: EventEmitter<BookResponse> = new EventEmitter<BookResponse>();
+  @Output() private share = new EventEmitter<BookResponse>();
+  @Output() private archive = new EventEmitter<BookResponse>();
+  @Output() private addToWaitingList = new EventEmitter<BookResponse>();
+  @Output() private borrow = new EventEmitter<BookResponse>();
+  @Output() private edit = new EventEmitter<BookResponse>();
+  @Output() private details = new EventEmitter<BookResponse>();
 
   onEdit() {
     this.edit.emit(this.book);
@@ -52,7 +72,6 @@ export class BookCard implements AfterViewInit {
 
   onBorrow() {
     this.borrow.emit(this.book);
-
   }
 
   onAddToWaitingList() {

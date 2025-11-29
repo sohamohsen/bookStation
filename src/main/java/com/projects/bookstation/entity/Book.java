@@ -21,6 +21,8 @@ public class Book extends BaseEntity {
     private String author;
     private String isbn;
     private String synopsis;
+    @Lob
+    @Column(name = "book_cover", columnDefinition = "TEXT")
     private String bookCover;
     private boolean archived;
     private boolean shareable;

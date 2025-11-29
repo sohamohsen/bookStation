@@ -8,11 +8,13 @@ import com.projects.bookstation.service.BookService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 
 @RestController
@@ -113,13 +115,16 @@ public class BookController {
         return ResponseEntity.ok(bookService.approveReturnBorrowedBook(id, authentication));
     }
 
-    @PostMapping(value = "/upload-cover-image/{bookId}")
+    @PostMapping(
+            value = "/upload-cover-image/{bookId}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<?> uploadBookCoverImage(
             @PathVariable Integer bookId,
-            String bookCover,
+            @RequestParam("image") MultipartFile image,
             Authentication authentication
-    ) throws AccessDeniedException {
-        bookService.uploadBookCoverImage(bookId, bookCover, authentication);
+    ) throws AccessDeniedException, IOException {
+        bookService.uploadBookCoverImage(bookId, image, authentication);
         return ResponseEntity.accepted().build();
     }
 }
