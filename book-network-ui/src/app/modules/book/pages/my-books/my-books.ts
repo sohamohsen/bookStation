@@ -151,7 +151,6 @@ export class MyBooks implements OnInit {
 
     this.bookService.updateBookShareableStatus({ id: book.id }).subscribe({
       next: () => {
-        // قلب القيمة locally عشان الكارد يتحدّث
         book.shareable = !book.shareable;
         console.log('after toggle shareable = ', book.shareable);
       },

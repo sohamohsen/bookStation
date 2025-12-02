@@ -23,10 +23,8 @@ import {BookControllerService} from '../../../../services/services/book-controll
 })
 export class BorrowedBookList implements OnInit {
 
-  // الريسبونس الكامل (لو حبيتيه)
   borrowedBooksResponse: PageResponseBorrowedBookResponse | null = null;
 
-  // ده اللي هنستخدمه في ال HTML
   books: BorrowedBookResponse[] = [];
   feedbackRequest: FeedbackRequest = {bookId: 0, comment: "", rating: 0};
   page = 0;
