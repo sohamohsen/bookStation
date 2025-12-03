@@ -17,6 +17,12 @@ export class ManageBook implements OnInit {
   errorMsg: string[] = [];
   selectedPicture?: string;
   selectedBookCover?: File;
+  isLoading = false;
+
+  // ✅ new flags
+  isEditMode = false;
+  loadFailed = false;
+
   readonly defaultImage =
     'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png';
 
@@ -37,7 +43,6 @@ export class ManageBook implements OnInit {
   ngOnInit(): void {
     console.log('route params = ', this.activatedRoute.snapshot.params);
 
-    // هنا نقرأ book_id من الراوتر
     const idParam =
       this.activatedRoute.snapshot.paramMap.get('book_id') ||
       this.activatedRoute.snapshot.paramMap.get('bookId') ||
@@ -45,8 +50,10 @@ export class ManageBook implements OnInit {
 
     console.log('idParam =', idParam);
 
+    // 🔹 No id → create mode → just show empty form
     if (!idParam) {
       console.log('No id → create mode (empty form)');
+      this.isEditMode = false;
       return;
     }
 
@@ -57,6 +64,9 @@ export class ManageBook implements OnInit {
     }
 
     console.log('Final numeric id =', id);
+
+    this.isEditMode = true;
+    this.isLoading = true;
 
     this.bookService.getBookById({ id }).subscribe({
       next: (book: any) => {
@@ -79,10 +89,15 @@ export class ManageBook implements OnInit {
             ? cover
             : 'data:image/jpeg;base64,' + cover;
         }
+
+        this.isLoading = false;
+        this.loadFailed = false;
       },
       error: (err) => {
         console.error('getBookById error', err);
         this.errorMsg = ['Could not load book data'];
+        this.isLoading = false;
+        this.loadFailed = true;   // ✅ mark failure so we don’t show empty form
       },
     });
   }
@@ -103,6 +118,7 @@ export class ManageBook implements OnInit {
 
   saveBook(): void {
     this.errorMsg = [];
+    this.isLoading = true;
 
     this.bookService.addBook({ body: this.bookRequest }).subscribe({
       next: (created: any) => {
@@ -117,41 +133,54 @@ export class ManageBook implements OnInit {
 
           if (!idAsNumber || isNaN(idAsNumber)) {
             this.errorMsg = ['Could not get book id from server'];
+            this.isLoading = false;
             return;
           }
 
           if (!this.selectedBookCover) {
-            // مفيش صورة → اكتفي بتسجيل الكتاب وارجع للـ my-books
+            this.isLoading = false;
             this.router.navigate(['/books/my-books']);
             return;
           }
 
-          console.log('Uploading cover for book', idAsNumber, 'file =', this.selectedBookCover);
+          console.log(
+            'Uploading cover for book',
+            idAsNumber,
+            'file =',
+            this.selectedBookCover
+          );
 
           this.bookService
             .uploadCoverManual(idAsNumber, this.selectedBookCover!)
             .subscribe({
-              next: () => this.router.navigate(['/books/my-books']),
+              next: () => {
+                this.isLoading = false;
+                this.router.navigate(['/books/my-books']);
+              },
               error: (err) => {
                 console.error('upload cover error', err);
                 this.errorMsg = ['Error uploading book cover'];
+                this.isLoading = false;
               },
             });
         };
 
-        // لو الـ API رجّع Blob (وده اللي حصل معاك)
         if (created instanceof Blob) {
-          created.text().then((text: string) => {
-            console.log('addBook blob text =', text);
-            let payload: any = text;
-            try {
-              payload = text ? JSON.parse(text) : null;
-            } catch {
-              // لو رجّع رقم بس "57" هيفضل string
-              payload = text;
-            }
-            handlePayload(payload);
-          });
+          created
+            .text()
+            .then((text: string) => {
+              console.log('addBook blob text =', text);
+              let payload: any = text;
+              try {
+                payload = text ? JSON.parse(text) : null;
+              } catch {
+                payload = text;
+              }
+              handlePayload(payload);
+            })
+            .finally(() => {
+              // handlePayload manages isLoading
+            });
         } else {
           handlePayload(created);
         }
@@ -159,7 +188,12 @@ export class ManageBook implements OnInit {
       error: (err) => {
         console.error('addBook error', err);
         this.errorMsg = err.error?.validation ?? ['Something went wrong'];
+        this.isLoading = false;
       },
     });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/books/my-books']);
   }
 }

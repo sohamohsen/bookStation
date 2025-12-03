@@ -10,5 +10,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   styleUrls: ['./menu.scss'],
 })
 export class MenuComponent {
-  logout() {}
+  logout() {
+    localStorage.removeItem('token');
+    window.location.reload();
+  }
 }

@@ -27,6 +27,8 @@ export class ReturnBooks implements OnInit {
   totalPages = 0;
 
   isLoading = false;
+  level: string | undefined;
+  message: string | undefined;
 
   constructor(
     private bookService: BookControllerService,
@@ -37,11 +39,11 @@ export class ReturnBooks implements OnInit {
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.getAllBorrowedBook();
+      this.getAllReturnedBook();
     }
   }
 
-  getAllBorrowedBook = (): void => {
+  getAllReturnedBook = (): void => {
     this.isLoading = true;
 
     const params = new HttpParams()
@@ -84,39 +86,62 @@ export class ReturnBooks implements OnInit {
   gotToFirstPage(): void {
     if (this.isFirstPage || this.isLoading) return;
     this.page = 0;
-    this.getAllBorrowedBook();
+    this.getAllReturnedBook();
   }
 
   gotToPreviousPage(): void {
     if (this.isFirstPage || this.isLoading) return;
     this.page--;
-    this.getAllBorrowedBook();
+    this.getAllReturnedBook();
   }
 
   gotToPage(index: number): void {
     if (this.isLoading) return;
     if (index < 0 || index >= this.totalPages || index === this.page) return;
     this.page = index;
-    this.getAllBorrowedBook();
+    this.getAllReturnedBook();
   }
 
   gotToNextPage(): void {
     if (this.isLastPage || this.isLoading) return;
     this.page++;
-    this.getAllBorrowedBook();
+    this.getAllReturnedBook();
   }
 
   gotToLastPage(): void {
     if (this.isLoading) return;
     if (this.totalPages === 0 || this.isLastPage) return;
     this.page = this.totalPages - 1;
-    this.getAllBorrowedBook();
+    this.getAllReturnedBook();
   }
 
   protected readonly returnBorrowedBook = returnBorrowedBook;
   protected readonly approveReturnBorrowedBook = approveReturnBorrowedBook;
 
   approveBookReturn(book: BorrowedBookResponse) {
+    if (!book.returned) {
+      this.level = 'error';
+      this.message = 'The book is not yet returned by the borrower';
+      return;
+    }
 
+    this.bookService.approveReturnBorrowedBook({
+      id: book.id as number
+    }).subscribe({
+      next: () => {
+        this.level = 'success';
+        this.message = 'Book return approved';
+        this.getAllReturnedBook();
+      },
+      error: (err) => {
+        console.error('approveReturnBorrowedBook error', err);
+        this.level = 'error';
+        this.message =
+          err.error?.error ||
+          err.error?.businessExceptionDescription ||
+          'Something went wrong while approving';
+      }
+    });
   }
+
 }

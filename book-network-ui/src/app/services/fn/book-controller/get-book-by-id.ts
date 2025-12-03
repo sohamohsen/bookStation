@@ -8,15 +8,21 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-
 export interface GetBookById$Params {
   id: number;
 }
 
-export function getBookById(http: HttpClient, rootUrl: string, params: GetBookById$Params, context?: HttpContext | undefined): Observable<StrictHttpResponse<{}>> {
+export function getBookById(
+  http: HttpClient,
+  rootUrl: string,
+  id: GetBookById$Params,
+  context?: HttpContext | undefined
+): Observable<StrictHttpResponse<{}>> {
   const rb = new RequestBuilder(rootUrl, getBookById.PATH, 'get');
-  if (params) {
-    rb.path('id', params.id, {});
+
+  if (id) {
+    // ✅ Use the numeric value instead of the whole object
+    rb.path('id', id.id, {});
   }
 
   return http.request(
@@ -24,8 +30,7 @@ export function getBookById(http: HttpClient, rootUrl: string, params: GetBookBy
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<{
-      }>;
+      return r as StrictHttpResponse<{}>;
     })
   );
 }

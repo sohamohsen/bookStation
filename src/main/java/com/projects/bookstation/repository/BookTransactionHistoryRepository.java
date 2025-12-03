@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -35,5 +36,16 @@ public interface BookTransactionHistoryRepository extends JpaRepository<BookTran
 
     Optional<BookTransactionHistory> findByBookIdAndUserIdAndReturnedFalseAndReturnApprovedFalse(Integer bookId, Integer userId);
 
-    Optional<BookTransactionHistory> findByBookIdAndUserIdAndReturnedTrueAndReturnApprovedFalse(Integer bookId, Integer id);
+    @Query("""
+    SELECT h
+    FROM BookTransactionHistory h
+    WHERE h.book.id = :bookId
+      AND h.user.id = :userId
+      AND h.returned = true
+      AND h.returnApproved = false
+""")
+    Optional<BookTransactionHistory> findByBookIdAndUserIdAndReturnedTrueAndReturnApprovedFalse(
+            @Param("bookId") Integer bookId,
+            @Param("userId") Integer userId
+    );
 }
