@@ -20,14 +20,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Show repo layout (debug)
+      - name: Find project directory
+        id: find
         run: |
-          echo "PWD: $(pwd)"
-          echo "Top-level files:"
+          # If it's at repo root
+          if [ -d "book-network" ]; then
+            echo "project_dir=book-network" >> $GITHUB_OUTPUT
+            echo "Found book-network at ./book-network"
+            exit 0
+          fi
+
+          # Search for the directory anywhere in repo (stop at first match)
+          DIR=$(find . -type d -name "book-network" -print -quit)
+          if [ -n "$DIR" ]; then
+            # normalize remove leading ./ if present
+            DIR=${DIR#./}
+            echo "project_dir=$DIR" >> $GITHUB_OUTPUT
+            echo "Found book-network at ./$DIR"
+            exit 0
+          fi
+
+          echo "project_dir=" >> $GITHUB_OUTPUT
+          echo "ERROR: directory 'book-network' not found in repository!"
+          echo "Repository root listing:"
           ls -la
           echo ""
-          echo "First-level directories:"
-          find . -maxdepth 2 -type d -print | sed -n '1,200p'
+          echo "Top-level tree (first 3 levels):"
+          find . -maxdepth 3 -print | sed -n '1,200p'
+          exit 1
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4
@@ -36,10 +56,10 @@ jobs:
           distribution: 'corretto'
 
       - name: Compile project
-        working-directory: book-network
+        working-directory: ${{ steps.find.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
-          ./mvnw clean compile
+          ./mvnw -B clean compile
         env:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
@@ -51,6 +71,7 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
+        # no port mapping required for service — but leaving 3306 is fine
         ports:
           - 3306:3306
         env:
@@ -58,9 +79,7 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        options: >-
-          --health-cmd="mysqladmin ping -h127.0.0.1 -u$MYSQL_USER -p$MYSQL_PASSWORD"
-          --health-interval=10s --health-timeout=5s --health-retries=5
+        # removed custom --health-cmd to avoid failures when secrets are missing
 
     steps:
       - name: Checkout code
@@ -68,25 +87,45 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Find project directory
+        id: find-tests
+        run: |
+          if [ -d "book-network" ]; then
+            echo "project_dir=book-network" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          DIR=$(find . -type d -name "book-network" -print -quit)
+          if [ -n "$DIR" ]; then DIR=${DIR#./}; echo "project_dir=$DIR" >> $GITHUB_OUTPUT; exit 0; fi
+          echo "project_dir=" >> $GITHUB_OUTPUT
+          echo "ERROR: directory 'book-network' not found!"
+          ls -la
+          exit 1
+
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Wait for MySQL
+      - name: Wait for MySQL (install client + poll)
         run: |
-          for i in {1..30}; do
+          sudo apt-get update -y
+          sudo apt-get install -y default-mysql-client
+          echo "Waiting for MySQL to accept connections..."
+          for i in {1..60}; do
             mysqladmin ping -h127.0.0.1 -u${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} >/dev/null 2>&1 && echo "MySQL is up" && break
-            echo "Waiting for MySQL ($i/30)..."
+            echo "Waiting ($i/60)..."
             sleep 2
           done
+        env:
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
       - name: Running unit tests
-        working-directory: book-network
+        working-directory: ${{ steps.find-tests.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
-          ./mvnw clean test
+          ./mvnw -B clean test
         env:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
@@ -108,9 +147,7 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        options: >-
-          --health-cmd="mysqladmin ping -h127.0.0.1 -u$MYSQL_USER -p$MYSQL_PASSWORD"
-          --health-interval=10s --health-timeout=5s --health-retries=5
+
     needs:
       - unit-tests
       - compile
@@ -120,25 +157,37 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Find project directory
+        id: find-build
+        run: |
+          if [ -d "book-network" ]; then echo "project_dir=book-network" >> $GITHUB_OUTPUT; exit 0; fi
+          DIR=$(find . -type d -name "book-network" -print -quit)
+          if [ -n "$DIR" ]; then DIR=${DIR#./}; echo "project_dir=$DIR" >> $GITHUB_OUTPUT; exit 0; fi
+          echo "project_dir=" >> $GITHUB_OUTPUT
+          echo "ERROR: directory 'book-network' not found!"
+          exit 1
+
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Wait for MySQL
+      - name: Wait for MySQL (install client + poll)
         run: |
-          for i in {1..30}; do
+          sudo apt-get update -y
+          sudo apt-get install -y default-mysql-client
+          for i in {1..60}; do
             mysqladmin ping -h127.0.0.1 -u${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} >/dev/null 2>&1 && echo "MySQL is up" && break
-            echo "Waiting for MySQL ($i/30)..."
+            echo "Waiting ($i/60)..."
             sleep 2
           done
 
       - name: Build backend
-        working-directory: book-network
+        working-directory: ${{ steps.find-build.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
-          ./mvnw clean package
+          ./mvnw -B clean package
         env:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
@@ -161,14 +210,22 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        options: >-
-          --health-cmd="mysqladmin ping -h127.0.0.1 -u$MYSQL_USER -p$MYSQL_PASSWORD"
-          --health-interval=10s --health-timeout=5s --health-retries=5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Find project directory
+        id: find-image
+        run: |
+          if [ -d "book-network" ]; then echo "project_dir=book-network" >> $GITHUB_OUTPUT; exit 0; fi
+          DIR=$(find . -type d -name "book-network" -print -quit)
+          if [ -n "$DIR" ]; then DIR=${DIR#./}; echo "project_dir=$DIR" >> $GITHUB_OUTPUT; exit 0; fi
+          echo "project_dir=" >> $GITHUB_OUTPUT
+          echo "ERROR: directory 'book-network' not found!"
+          exit 1
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4
@@ -176,19 +233,21 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Wait for MySQL
+      - name: Wait for MySQL (install client + poll)
         run: |
-          for i in {1..30}; do
+          sudo apt-get update -y
+          sudo apt-get install -y default-mysql-client
+          for i in {1..60}; do
             mysqladmin ping -h127.0.0.1 -u${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} >/dev/null 2>&1 && echo "MySQL is up" && break
-            echo "Waiting for MySQL ($i/30)..."
+            echo "Waiting ($i/60)..."
             sleep 2
           done
 
       - name: Build backend
-        working-directory: book-network
+        working-directory: ${{ steps.find-image.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
-          ./mvnw clean package
+          ./mvnw -B clean package
         env:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
@@ -199,7 +258,7 @@ jobs:
 
       - name: Extract project version
         id: extract-version
-        working-directory: book-network
+        working-directory: ${{ steps.find-image.outputs.project_dir }}
         run: |
           echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT
 
@@ -212,7 +271,7 @@ jobs:
       - name: Build & push backend image
         uses: docker/build-push-action@v5
         with:
-          context: book-network
+          context: ${{ steps.find-image.outputs.project_dir }}
           file: docker/backend/Dockerfile
           push: true
           platforms: linux/amd64
