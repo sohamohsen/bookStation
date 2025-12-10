@@ -33,10 +33,10 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)   // ✅ JWT فقط
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .authenticationProvider(authenticationProvider)               // ✅ يستخدم الـ provider بتاعك
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)  // ✅ فعّل JwtFilter
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(
                                 "/auth/**",

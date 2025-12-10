@@ -29,11 +29,9 @@
             "styles": [
               "src/styles.scss"
             ],
-            "server": "src/main.server.ts",
-            "outputMode": "server",
-            "ssr": {
-              "entry": "src/server.ts"
-            }
+
+            "outputMode": "static"
+
           },
           "configurations": {
             "production": {
@@ -97,3 +95,4 @@
     "analytics": "8e16a101-73f5-4e75-a0a4-4b5e11942fdd"
   }
 }
+
