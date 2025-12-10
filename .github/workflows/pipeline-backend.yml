@@ -20,28 +20,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Find project directory
-        id: find
+      - name: Detect project directory
+        id: detect
         run: |
-          # If it's at repo root
+          # 1) Prefer explicit book-network folder
           if [ -d "book-network" ]; then
             echo "project_dir=book-network" >> $GITHUB_OUTPUT
-            echo "Found book-network at ./book-network"
+            echo "Found project at ./book-network"
             exit 0
           fi
 
-          # Search for the directory anywhere in repo (stop at first match)
+          # 2) If mvnw + pom.xml exist at repo root, use repo root (.)
+          if [ -f "mvnw" ] && [ -f "pom.xml" ]; then
+            echo "project_dir=." >> $GITHUB_OUTPUT
+            echo "Found mvnw and pom.xml at repo root -> using repo root"
+            exit 0
+          fi
+
+          # 3) Search for a folder named book-network anywhere in repo
           DIR=$(find . -type d -name "book-network" -print -quit)
           if [ -n "$DIR" ]; then
-            # normalize remove leading ./ if present
             DIR=${DIR#./}
             echo "project_dir=$DIR" >> $GITHUB_OUTPUT
-            echo "Found book-network at ./$DIR"
+            echo "Found project at ./$DIR"
             exit 0
           fi
 
+          # 4) nothing found -> debug and fail
           echo "project_dir=" >> $GITHUB_OUTPUT
-          echo "ERROR: directory 'book-network' not found in repository!"
+          echo "ERROR: can't locate project (no book-network folder and no mvnw/pom.xml at repo root)"
           echo "Repository root listing:"
           ls -la
           echo ""
@@ -56,7 +63,7 @@ jobs:
           distribution: 'corretto'
 
       - name: Compile project
-        working-directory: ${{ steps.find.outputs.project_dir }}
+        working-directory: ${{ steps.detect.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
           ./mvnw -B clean compile
@@ -71,7 +78,6 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
-        # no port mapping required for service — but leaving 3306 is fine
         ports:
           - 3306:3306
         env:
@@ -79,7 +85,6 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        # removed custom --health-cmd to avoid failures when secrets are missing
 
     steps:
       - name: Checkout code
@@ -87,17 +92,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Find project directory
-        id: find-tests
+      - name: Detect project directory (tests)
+        id: detect-tests
         run: |
-          if [ -d "book-network" ]; then
-            echo "project_dir=book-network" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          if [ -d "book-network" ]; then echo "project_dir=book-network" >> $GITHUB_OUTPUT; exit 0; fi
+          if [ -f "mvnw" ] && [ -f "pom.xml" ]; then echo "project_dir=." >> $GITHUB_OUTPUT; exit 0; fi
           DIR=$(find . -type d -name "book-network" -print -quit)
           if [ -n "$DIR" ]; then DIR=${DIR#./}; echo "project_dir=$DIR" >> $GITHUB_OUTPUT; exit 0; fi
           echo "project_dir=" >> $GITHUB_OUTPUT
-          echo "ERROR: directory 'book-network' not found!"
+          echo "ERROR: project not found for tests"
           ls -la
           exit 1
 
@@ -122,7 +125,7 @@ jobs:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
       - name: Running unit tests
-        working-directory: ${{ steps.find-tests.outputs.project_dir }}
+        working-directory: ${{ steps.detect-tests.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
           ./mvnw -B clean test
@@ -147,7 +150,6 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-
     needs:
       - unit-tests
       - compile
@@ -157,14 +159,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Find project directory
-        id: find-build
+      - name: Detect project directory (build)
+        id: detect-build
         run: |
           if [ -d "book-network" ]; then echo "project_dir=book-network" >> $GITHUB_OUTPUT; exit 0; fi
+          if [ -f "mvnw" ] && [ -f "pom.xml" ]; then echo "project_dir=." >> $GITHUB_OUTPUT; exit 0; fi
           DIR=$(find . -type d -name "book-network" -print -quit)
           if [ -n "$DIR" ]; then DIR=${DIR#./}; echo "project_dir=$DIR" >> $GITHUB_OUTPUT; exit 0; fi
           echo "project_dir=" >> $GITHUB_OUTPUT
-          echo "ERROR: directory 'book-network' not found!"
+          echo "ERROR: project not found for build"
           exit 1
 
       - name: Setup JDK 17
@@ -184,7 +187,7 @@ jobs:
           done
 
       - name: Build backend
-        working-directory: ${{ steps.find-build.outputs.project_dir }}
+        working-directory: ${{ steps.detect-build.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
           ./mvnw -B clean package
@@ -210,21 +213,21 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Find project directory
-        id: find-image
+      - name: Detect project directory (image)
+        id: detect-image
         run: |
           if [ -d "book-network" ]; then echo "project_dir=book-network" >> $GITHUB_OUTPUT; exit 0; fi
+          if [ -f "mvnw" ] && [ -f "pom.xml" ]; then echo "project_dir=." >> $GITHUB_OUTPUT; exit 0; fi
           DIR=$(find . -type d -name "book-network" -print -quit)
           if [ -n "$DIR" ]; then DIR=${DIR#./}; echo "project_dir=$DIR" >> $GITHUB_OUTPUT; exit 0; fi
           echo "project_dir=" >> $GITHUB_OUTPUT
-          echo "ERROR: directory 'book-network' not found!"
+          echo "ERROR: project not found for image build"
           exit 1
 
       - name: Setup JDK 17
@@ -244,7 +247,7 @@ jobs:
           done
 
       - name: Build backend
-        working-directory: ${{ steps.find-image.outputs.project_dir }}
+        working-directory: ${{ steps.detect-image.outputs.project_dir }}
         run: |
           chmod +x ./mvnw
           ./mvnw -B clean package
@@ -258,7 +261,7 @@ jobs:
 
       - name: Extract project version
         id: extract-version
-        working-directory: ${{ steps.find-image.outputs.project_dir }}
+        working-directory: ${{ steps.detect-image.outputs.project_dir }}
         run: |
           echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT
 
@@ -271,7 +274,7 @@ jobs:
       - name: Build & push backend image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ steps.find-image.outputs.project_dir }}
+          context: ${{ steps.detect-image.outputs.project_dir }}
           file: docker/backend/Dockerfile
           push: true
           platforms: linux/amd64
