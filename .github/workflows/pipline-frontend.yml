@@ -20,6 +20,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: List repo contents
+        run: ls -R
 
       - name: Extract project version
         id: extract_version
@@ -36,7 +38,7 @@ jobs:
       - name: Build & Push to DockerHub
         uses: docker/build-push-action@v5
         with:
-          context: book-network-ui
+          context: .                         # root of repo
           file: docker/frontend/Dockerfile    # path to Dockerfile
           push: true
           platforms: linux/amd64
