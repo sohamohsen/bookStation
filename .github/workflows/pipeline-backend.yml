@@ -40,16 +40,18 @@ jobs:
     runs-on: ubuntu-latest
     name: Unit tests
     services:
-      postgres:
-        image: postgres:latest
+      mysql:
+        image: mysql:8.0
         ports:
-          - 5432:5432
+          - 3306:3306
         env:
-          POSTGRES_DB: bsn
-          POSTGRES_USER: username
-          POSTGRES_PASSWORD: password
+          MYSQL_DATABASE: bsn
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: rootpassword
         options: >-
-          --health-cmd="pg_isready -U username" --health-interval=10s --health-timeout=5s --health-retries=5
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uusername -ppassword"
+          --health-interval=10s --health-timeout=5s --health-retries=5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,7 +64,6 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-
       - name: Running unit tests
         run: |
           cd book-network
@@ -72,7 +73,7 @@ jobs:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_USER_NAME: ${{ secrets.EMAIL_USER_NAME }}
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bsn
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
           SPRING_DATASOURCE_USERNAME: username
           SPRING_DATASOURCE_PASSWORD: password
 
@@ -80,16 +81,18 @@ jobs:
     runs-on: ubuntu-latest
     name: Build backend
     services:
-      postgres:
-        image: postgres:latest
+      mysql:
+        image: mysql:8.0
         ports:
-          - 5432:5432
+          - 3306:3306
         env:
-          POSTGRES_DB: bsn
-          POSTGRES_USER: username
-          POSTGRES_PASSWORD: password
+          MYSQL_DATABASE: bsn
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: rootpassword
         options: >-
-          --health-cmd="pg_isready -U username" --health-interval=10s --health-timeout=5s --health-retries=5
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uusername -ppassword"
+          --health-interval=10s --health-timeout=5s --health-retries=5
     needs:
       - unit-tests
       - compile
@@ -114,7 +117,7 @@ jobs:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_USER_NAME: ${{ secrets.EMAIL_USER_NAME }}
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bsn
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
           SPRING_DATASOURCE_USERNAME: username
           SPRING_DATASOURCE_PASSWORD: password
 
@@ -123,16 +126,18 @@ jobs:
     name: Build backend image
     needs: build
     services:
-      postgres:
-        image: postgres:latest
+      mysql:
+        image: mysql:8.0
         ports:
-          - 5432:5432
+          - 3306:3306
         env:
-          POSTGRES_DB: bsn
-          POSTGRES_USER: username
-          POSTGRES_PASSWORD: password
+          MYSQL_DATABASE: bsn
+          MYSQL_USER: username
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: rootpassword
         options: >-
-          --health-cmd="pg_isready -U username" --health-interval=10s --health-timeout=5s --health-retries=5
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uusername -ppassword"
+          --health-interval=10s --health-timeout=5s --health-retries=5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -154,7 +159,7 @@ jobs:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_USER_NAME: ${{ secrets.EMAIL_USER_NAME }}
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bsn
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
           SPRING_DATASOURCE_USERNAME: username
           SPRING_DATASOURCE_PASSWORD: password
 
@@ -181,5 +186,3 @@ jobs:
           build-args: |
             PROFILE=dev
             APP_VERSION=${{ steps.extract-version.outputs.VERSION }}
-
-  

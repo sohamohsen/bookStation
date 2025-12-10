@@ -34,3 +34,5 @@ app:
   file:
     upload:
       photos-output-path: ./uploads
+  cors:
+    origins: http://localhost:4200, http://localhost:8080
