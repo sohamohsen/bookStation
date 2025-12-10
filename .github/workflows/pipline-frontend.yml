@@ -36,7 +36,7 @@ jobs:
       - name: Build & Push to DockerHub
         uses: docker/build-push-action@v5
         with:
-          context: .                         # root of repo
+          context: book-network-ui
           file: docker/frontend/Dockerfile    # path to Dockerfile
           push: true
           platforms: linux/amd64
