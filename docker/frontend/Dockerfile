@@ -17,7 +17,7 @@ RUN sed -i 's/"outputMode": "server"/"outputMode": "static"/g' angular.json && \
 
 FROM nginx:alpine
 
-COPY book-network-ui/nginx.conf /etc/nginx/nginx.conf
+COPY ./book-network-ui/nginx.conf /etc/nginx/nginx.conf
 
 COPY --from=build-stage /app/dist/book-network-ui/browser /usr/share/nginx/html
 
