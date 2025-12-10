@@ -20,6 +20,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Show repo layout (debug)
+        run: |
+          echo "PWD: $(pwd)"
+          echo "Top-level files:"
+          ls -la
+          echo ""
+          echo "First-level directories:"
+          find . -maxdepth 2 -type d -print | sed -n '1,200p'
+
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
@@ -27,8 +36,8 @@ jobs:
           distribution: 'corretto'
 
       - name: Compile project
+        working-directory: book-network
         run: |
-          cd book-network
           chmod +x ./mvnw
           ./mvnw clean compile
         env:
@@ -46,12 +55,13 @@ jobs:
           - 3306:3306
         env:
           MYSQL_DATABASE: bsn
-          MYSQL_USER: username
-          MYSQL_PASSWORD: password
-          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         options: >-
-          --health-cmd="mysqladmin ping -h127.0.0.1 -uusername -ppassword"
+          --health-cmd="mysqladmin ping -h127.0.0.1 -u$MYSQL_USER -p$MYSQL_PASSWORD"
           --health-interval=10s --health-timeout=5s --health-retries=5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,18 +74,26 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Running unit tests
+      - name: Wait for MySQL
         run: |
-          cd book-network
-          chmod +x mvnw
+          for i in {1..30}; do
+            mysqladmin ping -h127.0.0.1 -u${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} >/dev/null 2>&1 && echo "MySQL is up" && break
+            echo "Waiting for MySQL ($i/30)..."
+            sleep 2
+          done
+
+      - name: Running unit tests
+        working-directory: book-network
+        run: |
+          chmod +x ./mvnw
           ./mvnw clean test
         env:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_USER_NAME: ${{ secrets.EMAIL_USER_NAME }}
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-          SPRING_DATASOURCE_USERNAME: username
-          SPRING_DATASOURCE_PASSWORD: password
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.MYSQL_USER }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
   build:
     runs-on: ubuntu-latest
@@ -87,11 +105,11 @@ jobs:
           - 3306:3306
         env:
           MYSQL_DATABASE: bsn
-          MYSQL_USER: username
-          MYSQL_PASSWORD: password
-          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         options: >-
-          --health-cmd="mysqladmin ping -h127.0.0.1 -uusername -ppassword"
+          --health-cmd="mysqladmin ping -h127.0.0.1 -u$MYSQL_USER -p$MYSQL_PASSWORD"
           --health-interval=10s --health-timeout=5s --health-retries=5
     needs:
       - unit-tests
@@ -108,18 +126,26 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Build backend
+      - name: Wait for MySQL
         run: |
-          cd book-network
-          chmod +x mvnw
+          for i in {1..30}; do
+            mysqladmin ping -h127.0.0.1 -u${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} >/dev/null 2>&1 && echo "MySQL is up" && break
+            echo "Waiting for MySQL ($i/30)..."
+            sleep 2
+          done
+
+      - name: Build backend
+        working-directory: book-network
+        run: |
+          chmod +x ./mvnw
           ./mvnw clean package
         env:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_USER_NAME: ${{ secrets.EMAIL_USER_NAME }}
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-          SPRING_DATASOURCE_USERNAME: username
-          SPRING_DATASOURCE_PASSWORD: password
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.MYSQL_USER }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
   build-image:
     runs-on: ubuntu-latest
@@ -132,11 +158,11 @@ jobs:
           - 3306:3306
         env:
           MYSQL_DATABASE: bsn
-          MYSQL_USER: username
-          MYSQL_PASSWORD: password
-          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         options: >-
-          --health-cmd="mysqladmin ping -h127.0.0.1 -uusername -ppassword"
+          --health-cmd="mysqladmin ping -h127.0.0.1 -u$MYSQL_USER -p$MYSQL_PASSWORD"
           --health-interval=10s --health-timeout=5s --health-retries=5
     steps:
       - name: Checkout code
@@ -150,23 +176,31 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Build backend
+      - name: Wait for MySQL
         run: |
-          cd book-network
-          chmod +x mvnw
+          for i in {1..30}; do
+            mysqladmin ping -h127.0.0.1 -u${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} >/dev/null 2>&1 && echo "MySQL is up" && break
+            echo "Waiting for MySQL ($i/30)..."
+            sleep 2
+          done
+
+      - name: Build backend
+        working-directory: book-network
+        run: |
+          chmod +x ./mvnw
           ./mvnw clean package
         env:
           EMAIL_HOST_NAME: ${{ secrets.EMAIL_HOST_NAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_USER_NAME: ${{ secrets.EMAIL_USER_NAME }}
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-          SPRING_DATASOURCE_USERNAME: username
-          SPRING_DATASOURCE_PASSWORD: password
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/bsn?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.MYSQL_USER }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
       - name: Extract project version
         id: extract-version
+        working-directory: book-network
         run: |
-          cd book-network
           echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT
 
       - name: Login to DockerHub
@@ -182,7 +216,7 @@ jobs:
           file: docker/backend/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ${{secrets.DOCKERHUB_USERNAME}}/bsn-api:${{ steps.extract-version.outputs.VERSION }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/bsn-api:${{ steps.extract-version.outputs.VERSION }}
           build-args: |
             PROFILE=dev
             APP_VERSION=${{ steps.extract-version.outputs.VERSION }}
