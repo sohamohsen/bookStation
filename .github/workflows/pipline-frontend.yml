@@ -20,14 +20,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: List repo contents
-        run: ls -R
+
+      - name: List repo contents (debug)
+        run: |
+          echo "=== Root directory ==="
+          ls -la
+          echo -e "\n=== book-network-ui directory ==="
+          ls -la book-network-ui/
+          echo -e "\n=== docker/frontend directory ==="
+          ls -la docker/frontend/
+
+      - name: Verify Dockerfile location
+        run: |
+          echo "Dockerfile exists: $(test -f docker/frontend/Dockerfile && echo 'YES' || echo 'NO')"
+          echo "book-network-ui exists: $(test -d book-network-ui && echo 'YES' || echo 'NO')"
 
       - name: Extract project version
         id: extract_version
         run: |
           cd book-network-ui
           echo "VERSION=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${{ steps.extract_version.outputs.VERSION }}"
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -38,10 +51,12 @@ jobs:
       - name: Build & Push to DockerHub
         uses: docker/build-push-action@v5
         with:
-          context: .                         # root of repo
-          file: docker/frontend/Dockerfile    # path to Dockerfile
+          context: .                         # Root of repo - IMPORTANT!
+          file: docker/frontend/Dockerfile    # Path to Dockerfile from root
           push: true
           platforms: linux/amd64
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/bsn-ui:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/bsn-ui:${{ steps.extract_version.outputs.VERSION }}
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/bsn-ui:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/bsn-ui:buildcache,mode=max
